@@ -4,10 +4,8 @@
     <string name="app_name">Barcode Scanner</string>
     <string name="action_settings">Settings</string>
     <string name="strHomeScannerBtn">Scan Barcode</string>
-
     <integer name="viewfinder_border_width">4</integer>
     <integer name="viewfinder_border_length">60</integer>
-
     <string name="select_camera">Select a Camera</string>
     <string name="ok_button">OK</string>
     <string name="cancel_button">Cancel</string>
@@ -22,5 +20,9 @@
     <string name="hello_world">Hello world!</string>
     <string name="strPostDataBtn">Upload Product</string>
     <string name="title_activity_product_search">ProductSearch</string>
+    <string name="ok">OK</string>
+    <string name="key">Key</string>
+    <string name="value">Value</string>
+
 
 </resources>

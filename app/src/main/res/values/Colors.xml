@@ -5,4 +5,11 @@
     <color name="viewfinder_laser">#ffcc0000</color>
     <color name="viewfinder_border">#ffafed44</color>
     <color name="layoutHead">#E91E63</color>
+    <color name="pdtJsonValues">#757575</color>
+    <item name="primary" type="color">#FF009688</item>
+    <item name="primary_dark" type="color">#FF004D40</item>
+    <item name="accent" type="color">#6dc066</item>
+    <item name="textColorPrimary" type="color">#fffff1</item>
+
+
 </resources>

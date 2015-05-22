@@ -1,6 +1,8 @@
 package com.dxd.barcodescanner;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -12,8 +14,6 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -36,12 +36,14 @@ import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 
 public class UploadProduct extends ActionBarActivity {
-    private Uri outputFileUri;
     int YOUR_SELECT_PICTURE_REQUEST_CODE = 0;
+    EditText editText;
+    private Uri outputFileUri;
     private Uri selectedImageUri;
     private String selectedImagePath = null;
     private String URL = null;
-    EditText editText ;
+    private int responseCode;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,28 +52,6 @@ public class UploadProduct extends ActionBarActivity {
         editText.setText(getIntent().getStringExtra("barcode"));
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_upload_product, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     public void uploadProd(View v){
         String sku = ((EditText)findViewById(R.id.sku)).getText().toString();
@@ -107,20 +87,7 @@ public class UploadProduct extends ActionBarActivity {
             postPdtData.add(new BasicNameValuePair("stock",stk));
             postPdtData.add(new BasicNameValuePair("list_price", listPrice));
 
-
-            // String IP = getIntent().getStringExtra("IP");
-            // String port = getIntent().getStringExtra("Port");
-            // String jsonURL = "http://192.168.1.11:8000/upload_product/";
-            // Log.d("dxd", jsonURL);
-
-            if(getIntent() != null){
-                String IP = getIntent().getStringExtra("IP");
-                String port = getIntent().getStringExtra("Port");
-                URL = "http://"+IP+":"+port+"/upload_product/";
-            }
-            else{
-               //
-            }
+            URL = getIntent().getStringExtra("url");
             new httpPostAsyncTask().execute(postPdtData);
         }
         else{
@@ -128,61 +95,12 @@ public class UploadProduct extends ActionBarActivity {
         }
      }
 
-    public class httpPostAsyncTask extends AsyncTask<List<NameValuePair> , Void,String> {
-
-        @Override
-        protected String doInBackground(List<NameValuePair>... nameValuePairs) {
-            //String url = "http://192.168.1.11:8000/upload_product/";
-            CloseableHttpClient httpClient = HttpClients.createDefault();
-            HttpPost uploadFile = new HttpPost(URL);
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            for(int index=0; index < nameValuePairs[0].size(); index++) {
-                if(nameValuePairs[0].get(index).getName().equalsIgnoreCase("image")) {
-
-                    // If the key equals to "image", we use FileBody to transfer the data
-                    //  builder.addBinaryBody("image",file);
-                    builder.addPart(nameValuePairs[0].get(index).getName(), new FileBody(new File(nameValuePairs[0].get(index).getValue())));
-                } else {
-                    // Normal string data
-                    //entity.addPart(nameValuePairs.get(index).getName(), new StringBody(nameValuePairs.get(index).getValue()));
-
-                    builder.addTextBody(nameValuePairs[0].get(index).getName(), nameValuePairs[0].get(index).getValue(), ContentType.TEXT_PLAIN);
-                }
-            }
-
-            HttpEntity multipart = builder.build();
-            uploadFile.setEntity(multipart);
-            String result = "fail";
-            try {
-                HttpResponse response = null;
-
-                response = httpClient.execute(uploadFile);
-                //  result="got it";
-                HttpEntity responseEntity = response.getEntity();
-                String responseServer = responseEntity.toString();
-                return responseServer;
-            }
-            catch (IOException e) {
-                result = e.getMessage();
-                return result;
-            }
-
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-
-            Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
-        }
-    }
-
-
     public void openImageIntent(View v) {
 
 // Determine Uri of camera image to save.
         final File root = new File(Environment.getExternalStorageDirectory() + File.separator + "MyDir" + File.separator);
         root.mkdirs();
-        final String fname = "img_"+ System.currentTimeMillis() + ".jpg";
+        final String fname = "img_" + System.currentTimeMillis() + ".jpg";
         final File sdImageMainDirectory = new File(root, fname);
         outputFileUri = Uri.fromFile(sdImageMainDirectory);
 
@@ -191,7 +109,7 @@ public class UploadProduct extends ActionBarActivity {
         final Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         final PackageManager packageManager = getPackageManager();
         final List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
-        for(ResolveInfo res : listCam) {
+        for (ResolveInfo res : listCam) {
             final String packageName = res.activityInfo.packageName;
             final Intent intent = new Intent(captureIntent);
             intent.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
@@ -234,7 +152,7 @@ public class UploadProduct extends ActionBarActivity {
                 if (isCamera) {
 
                     selectedImagePath = outputFileUri.getPath().toString();
-                    Toast.makeText(getApplicationContext(),"Image selected " + selectedImagePath, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Image selected " + selectedImagePath, Toast.LENGTH_SHORT).show();
 
                 } else {
                     //selectedImageUri = (data == null) ? null : data.getData();
@@ -253,32 +171,124 @@ public class UploadProduct extends ActionBarActivity {
     */
 
                     String id = selectedImageUri.getLastPathSegment().split(":")[1];
-                    final String[] imageColumns = {MediaStore.Images.Media.DATA };
+                    final String[] imageColumns = {MediaStore.Images.Media.DATA};
                     final String imageOrderBy = null;
 
                     Uri uri = getUri();
 
 
                     Cursor imageCursor = managedQuery(uri, imageColumns,
-                            MediaStore.Images.Media._ID + "="+id, null, imageOrderBy);
+                            MediaStore.Images.Media._ID + "=" + id, null, imageOrderBy);
 
                     if (imageCursor.moveToFirst()) {
                         selectedImagePath = imageCursor.getString(imageCursor.getColumnIndex(MediaStore.Images.Media.DATA));
                     }
 
 
-
-                    Toast.makeText(getApplicationContext(),"Image selected " + selectedImagePath, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Image selected " + selectedImagePath, Toast.LENGTH_SHORT).show();
 
                 }
             }
         }
     }
+
     private Uri getUri() {
         String state = Environment.getExternalStorageState();
         if(!state.equalsIgnoreCase(Environment.MEDIA_MOUNTED))
             return MediaStore.Images.Media.INTERNAL_CONTENT_URI;
 
         return MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+    }
+
+    public class httpPostAsyncTask extends AsyncTask<List<NameValuePair>, Void, String> {
+
+        @Override
+        protected String doInBackground(List<NameValuePair>... nameValuePairs) {
+
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+            HttpPost uploadFile = new HttpPost(URL);
+
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            for (int index = 0; index < nameValuePairs[0].size(); index++) {
+                if (nameValuePairs[0].get(index).getName().equalsIgnoreCase("image")) {
+
+                    // If the key equals to "image", we use FileBody to transfer the data
+                    //  builder.addBinaryBody("image",file);
+                    builder.addPart(nameValuePairs[0].get(index).getName(), new FileBody(new File(nameValuePairs[0].get(index).getValue())));
+                } else {
+                    // Normal string data
+                    //entity.addPart(nameValuePairs.get(index).getName(), new StringBody(nameValuePairs.get(index).getValue()));
+
+                    builder.addTextBody(nameValuePairs[0].get(index).getName(), nameValuePairs[0].get(index).getValue(), ContentType.TEXT_PLAIN);
+                }
+            }
+
+            HttpEntity multipart = builder.build();
+            uploadFile.setEntity(multipart);
+            String result = "fail";
+
+
+            try {
+
+                HttpResponse response = null;
+                response = httpClient.execute(uploadFile);
+                //  result="got it";
+                responseCode = response.getStatusLine().getStatusCode();
+                HttpEntity responseEntity = response.getEntity();
+                String responseServer = responseEntity.toString();
+                return responseServer;
+            } catch (IOException e) {
+                result = e.getMessage();
+                return result;
+            }
+
+
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            if (responseCode == 200) {
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(UploadProduct.this);
+                builder.setMessage("Product Details was uploaded successfully to server.")
+                        .setTitle("Upload");
+                builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        Intent intent = new Intent(getApplicationContext(), ScannerActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
+                        finish();
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                dialog.setCanceledOnTouchOutside(false);
+            } else {
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(UploadProduct.this);
+                builder.setMessage("Oops! Something went wrong.\n" + result)
+                        .setTitle("Error");
+                builder.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface arg0, int arg1) {
+                        Intent intent = new Intent(getApplicationContext(), ScannerActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
+                        finish();
+                    }
+                });
+
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                dialog.setCanceledOnTouchOutside(false);
+
+
+            }
+        }
     }
 }
